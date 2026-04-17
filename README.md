@@ -6,11 +6,11 @@ Documents the failure modes the bot hit, the prompting patterns that actually wo
 
 ## View the reference
 
-Open [`fusion_mcp_debug_reference.html`](./fusion_mcp_debug_reference.html) in a browser, or view it hosted via GitHub Pages at:
+View it hosted via GitHub Pages:
 
-> `https://teddyski.github.io/fusion-mcp-troubleshooting/`
+> **[https://teddyski.github.io/fusion-mcp-troubleshooting/](https://teddyski.github.io/fusion-mcp-troubleshooting/)**
 
-(Enable Pages in the repo settings → Pages → Source: `main` / root.)
+Or open [`index.html`](./index.html) locally in a browser.
 
 ## What's inside
 

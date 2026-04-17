@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fusion 360 MCP Bot — Troubleshooting Artifact</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --surface2: #1a1e2a;
+    --border: #252a38;
+    --border2: #2e3547;
+    --text: #c8cdd8;
+    --text-dim: #6b7385;
+    --text-bright: #eef0f5;
+    --accent: #00d4ff;
+    --accent-dim: #0a8aaa;
+    --green: #39d98a;
+    --green-dim: #1a6b42;
+    --green-bg: #0d1f17;
+    --red: #ff4d6a;
+    --red-dim: #8a1f2e;
+    --red-bg: #1a0d10;
+    --amber: #ffb347;
+    --amber-dim: #8a5a1f;
+    --amber-bg: #1a1208;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── LAYOUT ─────────────────────────────── */
+  .page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* ── HEADER ─────────────────────────────── */
+  .site-header {
+    border-bottom: 1px solid var(--border2);
+    padding: 32px 0 24px;
+    margin-bottom: 48px;
+  }
+
+  .site-header .label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .site-header h1 {
+    font-family: var(--sans);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text-bright);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  .site-header .meta {
+    margin-top: 8px;
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+
+  /* ── NAV ─────────────────────────────────── */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-dim);
+    padding: 20px 24px;
+    margin-bottom: 48px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 32px;
+  }
+
+  .toc-title {
+    grid-column: 1 / -1;
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  .toc a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 12px;
+    padding: 3px 0;
+    transition: color 0.15s;
+  }
+  .toc a:hover { color: var(--accent); }
+
+  .toc .toc-num {
+    color: var(--accent-dim);
+    margin-right: 6px;
+  }
+
+  /* ── SECTIONS ────────────────────────────── */
+  section {
+    margin-bottom: 56px;
+  }
+
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent-dim);
+    margin-bottom: 6px;
+  }
+
+  h2 {
+    font-family: var(--sans);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-bright);
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h3 {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin: 24px 0 10px;
+  }
+
+  p { margin-bottom: 12px; color: var(--text); }
+
+  /* ── FIREWALL BLOCK ──────────────────────── */
+  .firewall-wrapper {
+    position: relative;
+    margin: 24px 0;
+  }
+
+  .firewall-label {
+    background: var(--red);
+    color: #fff;
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .copy-btn {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-radius: 2px;
+  }
+  .copy-btn:hover { background: rgba(255,255,255,0.25); }
+  .copy-btn.copied { background: var(--green-dim); border-color: var(--green); }
+
+  .firewall-block {
+    background: #090b10;
+    border: 1px solid var(--red-dim);
+    border-top: none;
+    padding: 24px;
+    white-space: pre;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.8;
+    font-family: var(--mono);
+  }
+
+  .fw-head  { color: var(--accent); font-weight: 700; }
+  .fw-intro { color: var(--text); }
+  .fw-trig  { color: var(--amber); }
+  .fw-stop  { color: var(--red); font-weight: 700; }
+  .fw-opt   { color: var(--green); }
+  .fw-rule  { color: var(--text-dim); }
+
+  /* ── CALL-OUT BOXES ──────────────────────── */
+  .box {
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-left: 3px solid;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .box-red    { background: var(--red-bg);   border-color: var(--red);   color: #f4b8c0; }
+  .box-green  { background: var(--green-bg); border-color: var(--green); color: #9ee8c0; }
+  .box-amber  { background: var(--amber-bg); border-color: var(--amber); color: #e8c98a; }
+  .box-accent { background: var(--surface2); border-color: var(--accent); color: var(--text); }
+
+  .box strong { color: var(--text-bright); font-weight: 600; }
+  .box .box-title {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  /* ── CODE BLOCKS ─────────────────────────── */
+  .code-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 16px 20px;
+    margin: 12px 0;
+    white-space: pre;
+    overflow-x: auto;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #9eb8d4;
+  }
+
+  .code-block .cm { color: var(--text-dim); font-style: italic; }
+  .code-block .kw { color: var(--accent); }
+  .code-block .num { color: var(--amber); }
+  .code-block .ok  { color: var(--green); }
+  .code-block .bad { color: var(--red); }
+
+  /* ── TABLES ──────────────────────────────── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+
+  .data-table th {
+    background: var(--surface2);
+    color: var(--accent);
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border2);
+  }
+
+  .data-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    color: var(--text);
+  }
+
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table .mono { font-family: var(--mono); color: #9eb8d4; font-size: 12px; }
+  .data-table .dim  { color: var(--text-dim); font-size: 12px; }
+  .data-table .err  { color: var(--red); }
+  .data-table .ok   { color: var(--green); }
+  .data-table .warn { color: var(--amber); }
+  .data-table .head-green th { color: var(--green); }
+  .data-table .head-red   th { color: var(--red); }
+
+  /* safe/unsafe split */
+  .split-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 12.5px;
+  }
+  .split-table th {
+    padding: 10px 14px;
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .split-table th.safe-h { background: var(--green-dim); color: #d4f5e4; }
+  .split-table th.unsafe-h { background: var(--red-dim); color: #f5d4da; }
+  .split-table td {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .split-table td.safe   { background: var(--green-bg); color: #7ddcaa; }
+  .split-table td.unsafe { background: var(--red-bg);   color: #e08090; }
+  .split-table tr.note td.safe   { color: var(--text-dim); font-family: var(--mono); font-style: italic; font-size: 12px; }
+  .split-table tr.note td.unsafe { color: var(--text-dim); font-family: var(--mono); font-style: italic; font-size: 12px; }
+
+  /* ── CHECKLIST ───────────────────────────── */
+  .checklist {
+    list-style: none;
+    margin: 12px 0;
+  }
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .checklist li:first-child { border-top: 1px solid var(--border); }
+  .checklist .num {
+    min-width: 22px;
+    height: 22px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .checklist .check-text { flex: 1; }
+  .checklist .check-how  { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
+
+  /* ── EXAMPLE PROMPT ──────────────────────── */
+  .example-prompt {
+    position: relative;
+    margin: 16px 0;
+  }
+  .example-label {
+    background: var(--green-dim);
+    color: #d4f5e4;
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .example-body {
+    background: var(--surface);
+    border: 1px solid var(--green-dim);
+    border-top: none;
+    padding: 20px;
+    white-space: pre;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.8;
+    color: #b0d8c0;
+  }
+
+  /* ── DIMENSIONS TABLE ────────────────────── */
+  .dim-tag {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--accent);
+    font-size: 11px;
+    padding: 1px 6px;
+    margin-left: 6px;
+  }
+
+  /* ── STATE TRACKER ───────────────────────── */
+  .state-table tr td:nth-child(2) { font-weight: 600; }
+  .state-done  { color: var(--green); }
+  .state-todo  { color: var(--text-dim); }
+
+  /* ── FOOTER ──────────────────────────────── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 0;
+    color: var(--text-dim);
+    font-size: 11px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ── GITHUB LINK ─────────────────────────── */
+  .gh-link {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--accent-dim);
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .gh-link:hover { color: var(--text-bright); border-color: var(--accent); }
+
+  /* ── PORTFOLIO INTRO ─────────────────────── */
+  .intro {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 20px 24px;
+    margin-bottom: 32px;
+    font-size: 13px;
+    line-height: 1.75;
+  }
+  .intro strong { color: var(--text-bright); font-weight: 600; }
+  .intro .intro-title {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+    display: block;
+  }
+  .intro ul { margin: 10px 0 0 18px; color: var(--text-dim); }
+  .intro ul li { margin-bottom: 4px; }
+
+  /* ── SMOOTH ANCHOR HIGHLIGHT ─────────────── */
+  :target { animation: hl 1s ease; }
+  @keyframes hl { from { background: rgba(0,212,255,0.08); } to { background: transparent; } }
+
+  @media (max-width: 640px) {
+    .toc { grid-template-columns: 1fr; }
+    h2 { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="label">Portfolio · Fusion 360 MCP Bot · Troubleshooting Artifact</div>
+  <h1>Fusion 360 MCP Bot<br>Troubleshooting &amp; Workflow Reference</h1>
+  <div class="meta">
+    Field notes from debugging AI-assisted parametric CAD ·
+    <a href="https://github.com/teddyski/fusion-mcp-troubleshooting" class="gh-link" target="_blank" rel="noopener">view on GitHub →</a>
+  </div>
+</header>
+
+<!-- PORTFOLIO INTRO -->
+<div class="intro">
+  <span class="intro-title">About this artifact</span>
+  A field reference captured while using <strong>Claude + the Fusion 360 MCP integration</strong> to build a parametric multi-body assembly with radial/bayonet-style cut features. It documents the failure modes the bot hit, the prompting patterns that actually worked, and the geometry conventions required to avoid silent no-op cuts. Preserved here as a portfolio artifact of real-world AI-assisted CAD debugging.
+  <ul>
+    <li><strong>What works:</strong> pre-computed XY coordinates, explicit body targeting, MCP prompts for revolves and construction planes.</li>
+    <li><strong>What fails:</strong> asking the MCP bot to do radial math at all (infinite solution space &rarr; plausible-looking wrong answers), <code>circularPatternFeatures</code> on multi-body files, <code>participantBodies</code> on revolve inputs.</li>
+    <li><strong>Case study:</strong> a 3-channel bayonet ring (60&deg; lock channels + entry slots) — dimensions and build state included.</li>
+  </ul>
+</div>
+
+<!-- TOC -->
+<nav class="toc">
+  <div class="toc-title">Contents</div>
+  <a href="#session"><span class="toc-num">0.</span> Session Start Checklist</a>
+  <a href="#s1"><span class="toc-num">1.</span> Core Insight — 3D Cuts</a>
+  <a href="#s2"><span class="toc-num">2.</span> Why Radial Math Fails</a>
+  <a href="#s3"><span class="toc-num">3.</span> Working MCP Prompt Pattern</a>
+  <a href="#s4"><span class="toc-num">4.</span> Entry Slots — Specific Pattern</a>
+  <a href="#s5"><span class="toc-num">5.</span> Python — What Fails & Why</a>
+  <a href="#s6"><span class="toc-num">6.</span> Diagnostic Workflow</a>
+  <a href="#s7"><span class="toc-num">7.</span> Multi-Body File Rules</a>
+  <a href="#s8"><span class="toc-num">8.</span> Units & Coordinates</a>
+  <a href="#s9"><span class="toc-num">9.</span> Confirmed Ring Dimensions</a>
+  <a href="#s10"><span class="toc-num">10.</span> Angle → World Coordinates</a>
+  <a href="#s11"><span class="toc-num">11.</span> Build State Tracker</a>
+  <a href="#s12"><span class="toc-num">12.</span> Lessons Learned</a>
+</nav>
+
+<!-- ══ SECTION 0: SESSION CHECKLIST ══════════════════════════════ -->
+<section id="session">
+  <div class="section-label">section 0</div>
+  <h2>Session Start Checklist</h2>
+  <p>Do this every time before opening an MCP session.</p>
+
+  <!-- FIREWALL BLOCK -->
+  <div class="firewall-wrapper">
+    <div class="firewall-label">
+      ⚠ Radial Math Firewall — paste at top of every MCP session
+      <button class="copy-btn" onclick="copyFirewall(this)">Copy block</button>
+    </div>
+    <div class="firewall-block" id="firewall-text"><span class="fw-head">RADIAL MATH FIREWALL — READ BEFORE ANYTHING ELSE</span>
+
+<span class="fw-intro">If any step in this task requires deriving, computing, or inferring:</span>
+<span class="fw-trig">  - A radius value from a description (e.g. "outer wall", "flush with surface")
+  - An X/Y coordinate from an angle and radius
+  - A profile position relative to a curved surface
+  - Any trig (sin, cos, tan) to place geometry</span>
+
+<span class="fw-stop">STOP. Do not attempt to derive it. Instead:</span>
+
+<span class="fw-opt">  Option A — Ask: "I need the pre-computed XY corners for this cut.
+              Can you calculate them and give me raw numbers?"
+
+  Option B — Say: "I need a Python measurement to confirm [specific value]
+              before I can place this profile."</span>
+
+<span class="fw-rule">Never guess a radius. Never infer 'inner boundary' or 'outer boundary' from
+a description. If both radii are not given as explicit numbers: stop and ask.</span></div>
+  </div>
+
+  <!-- PRE-SESSION CHECKLIST -->
+  <h3>Before you start</h3>
+  <ul class="checklist">
+    <li><span class="num">1</span><div class="check-text">Paste the firewall block above your task description<div class="check-how">Copy from this page with the button above</div></div></li>
+    <li><span class="num">2</span><div class="check-text">Pre-compute all XY corners for any radial cuts<div class="check-how">Ask regular Claude chat (see below) — not MCP</div></div></li>
+    <li><span class="num">3</span><div class="check-text">Know your Z values in cm, not mm<div class="check-how">Divide mm by 10 — Fusion works in cm internally</div></div></li>
+    <li><span class="num">4</span><div class="check-text">Know your target body name exactly<div class="check-how">Check Fusion browser panel before opening session</div></div></li>
+    <li><span class="num">5</span><div class="check-text">Have volumes of each body before you start<div class="check-how">Run diagnostic script or check fusion_measure.txt</div></div></li>
+  </ul>
+
+  <!-- USING CLAUDE FOR PRECOMPUTE -->
+  <h3>Using regular Claude to pre-compute (safe)</h3>
+  <p>You don't need to do trig yourself. Ask Claude in a regular chat <em>before</em> your MCP session. You decide the input numbers — Claude does the multiplication. That split is what makes it safe.</p>
+
+  <div class="example-prompt">
+    <div class="example-label">
+      Example — paste this into regular Claude chat
+      <button class="copy-btn" onclick="copyExample(this)">Copy</button>
+    </div>
+    <div class="example-body" id="example-text">I need to pre-compute corner coordinates for a Fusion 360 cut.
+Just do the math — do not suggest geometry or tell me where to place anything.
+
+Angle: 330 deg
+Inner radius: 1.905cm
+Outer radius: 3.1cm
+Slot half-width: 0.441cm (perpendicular to radial direction)
+Z bottom: -12.500cm     Z top: -11.700cm
+
+Give me a table of the 4 corner coordinates [X, Y, Z] I can copy
+directly into an MCP prompt. Nothing else.</div>
+  </div>
+
+  <table class="split-table">
+    <tr>
+      <th class="safe-h">✓ Safe — you set numbers, Claude multiplies</th>
+      <th class="unsafe-h">✗ Unsafe — Claude decides the numbers</th>
+    </tr>
+    <tr>
+      <td class="safe">"angle=330, r=1.905, compute X and Y"</td>
+      <td class="unsafe">"cut the inner wall of the ring at 330"</td>
+    </tr>
+    <tr>
+      <td class="safe">"Z bottom is -12.5cm, Z top is -11.7cm"</td>
+      <td class="unsafe">"slot through the outer surface"</td>
+    </tr>
+    <tr>
+      <td class="safe">"slot is 0.441cm each side of center"</td>
+      <td class="unsafe">"open at the bottom of the ring"</td>
+    </tr>
+    <tr class="note">
+      <td class="safe">Claude multiplies. You verify the numbers look right before using.</td>
+      <td class="unsafe">Claude guesses a radius from the description. Wrong number enters Fusion silently.</td>
+    </tr>
+  </table>
+
+  <div class="box box-amber">
+    <span class="box-title">⚠ When Claude starts guessing anyway</span>
+    If Claude gives coordinates you didn't provide, or says anything like:<br>
+    <code>"I'll place the profile at the outer surface..."</code><br>
+    <code>"The inner boundary should be around..."</code><br>
+    <code>"Using the tube OD as reference..."</code><br><br>
+    <strong>Stop the session immediately.</strong> Do not continue with those coordinates. Restart with the firewall block and provide explicit numbers.
+  </div>
+</section>
+
+<!-- ══ SECTION 1 ══════════════════════════════════════════════════ -->
+<section id="s1">
+  <div class="section-label">section 1</div>
+  <h2>Core Insight — How to Think About 3D Cuts</h2>
+  <p>AI models (including Claude) hallucinate when reasoning about 3D rotational geometry. The fix is to never ask the AI to reason in 3D. Instead, decompose every cut into:</p>
+  <ul class="checklist">
+    <li><span class="num">→</span><div class="check-text">A 2D rectangle defined by flat world coordinates</div></li>
+    <li><span class="num">→</span><div class="check-text">A single rotation angle (degrees)</div></li>
+    <li><span class="num">→</span><div class="check-text">An operation (cut / join)</div></li>
+  </ul>
+
+  <table class="data-table">
+    <tr><th>Concept</th><th>How to express it</th></tr>
+    <tr><td>Shape to cut</td><td>Rectangle with 4 explicit world XYZ corner points</td></tr>
+    <tr><td>Where in Z</td><td class="mono">Exact Z values in cm (Fusion internal units)</td></tr>
+    <tr><td>Radial position</td><td class="mono">r × cos(angle), r × sin(angle) — compute beforehand, never ask AI to derive</td></tr>
+    <tr><td>The arc</td><td>Revolve N degrees around Z axis — NOT a swept path</td></tr>
+    <tr><td>Which body</td><td class="mono">Name it explicitly: "Target = REF_BayonetRing_V1 only"</td></tr>
+  </table>
+</section>
+
+<!-- ══ SECTION 2 ══════════════════════════════════════════════════ -->
+<section id="s2">
+  <div class="section-label">section 2</div>
+  <h2>Why Radial Math Fails — The Root Cause</h2>
+
+  <div class="box box-red">
+    <span class="box-title">⚠ Critical — read before any cut involving radius values</span>
+    If you ask Claude to compute a radial position (even indirectly), it will hallucinate. The failure is consistent:<br><br>
+    1. Claude receives "cut the outer wall only, from r=19.05mm to r=30mm"<br>
+    2. Claude internally tries to resolve what "outer wall" means in 3D<br>
+    3. It selects a wrong reference point or confuses OD radius with ID radius<br>
+    4. The rectangle is placed at a plausible but incorrect position<br>
+    5. Fusion runs without error, removes 0 material, no warning<br><br>
+    <strong>The fix:</strong> YOU compute every radius value before giving the prompt. Pass only raw numbers. Never use words like "outer surface", "inner wall", "flush with", or "from the outside in".
+  </div>
+
+  <h3>Failure mode 1 — partial radius constraints</h3>
+  <p>The most common trigger: describing a cut that only involves ONE radius boundary while the other is implicit.</p>
+
+  <div class="box box-red">
+    <strong>Broken:</strong> <code>"Cut a slot through the outer wall of the ring, 12mm wide, 8mm deep from the bottom rim"</code><br><br>
+    "Outer wall" forces Claude to infer an inner boundary. It picks a plausible radius — which may be numerically correct by coincidence but the reasoning is wrong, so any variation in phrasing causes a different wrong radius.<br><br>
+    <strong>Correct:</strong> give both radii as computed numbers:<br>
+    <code>Inner radius of cut: 1.905cm   (ring ID)</code><br>
+    <code>Outer radius of cut: 3.1cm     (ring OD 3.0 + 0.1cm buffer)</code>
+  </div>
+
+  <h3>Failure mode 2 — notch cut at bottom rim</h3>
+  <div class="box box-red">
+    <strong>Broken:</strong> <code>"Cut an open notch at the bottom of the ring, extending upward N mm"</code><br><br>
+    "Open at the bottom" is interpreted as "start below Z_bottom". Profile origin is placed at Z_bottom − N instead of Z_bottom. Cut is entirely outside the ring body, removes 0 material.<br><br>
+    <strong>Correct:</strong> specify Z_bottom of body as one edge, Z_bottom + height as the other:<br>
+    <code>z_bottom_edge = -12.500cm   (ring bottom, Z = -125mm)</code><br>
+    <code>z_top_edge    = -11.700cm   (z_bottom + 8mm = entry slot top)</code>
+  </div>
+</section>
+
+<!-- ══ SECTION 3 ══════════════════════════════════════════════════ -->
+<section id="s3">
+  <div class="section-label">section 3</div>
+  <h2>Working MCP Prompt Pattern</h2>
+  <p>This pattern successfully cut all 3 bayonet lock channels. Use as a template for any rotational cut.</p>
+
+  <h3>3.1 — Pre-compute your coordinates (you do this, not Claude)</h3>
+  <div class="code-block"><span class="cm">// Example for cut at 210°</span>
+angle = 210°
+cos(210°) = <span class="num">-0.866</span>    sin(210°) = <span class="num">-0.500</span>
+
+inner_radius = <span class="num">2.5</span>cm    outer_radius = <span class="num">3.1</span>cm  <span class="cm">// 3.0 + 0.1 buffer</span>
+z_bottom = <span class="num">-11.700</span>cm   z_top = <span class="num">-11.150</span>cm
+
+Corner 1 (inner, bottom): [<span class="num">-0.866</span>×2.5, <span class="num">-0.500</span>×2.5, <span class="num">-11.700</span>] = [<span class="num">-2.165, -1.250, -11.700</span>]
+Corner 2 (outer, bottom): [<span class="num">-0.866</span>×3.1, <span class="num">-0.500</span>×3.1, <span class="num">-11.700</span>] = [<span class="num">-2.684, -1.550, -11.700</span>]
+Corner 3 (outer, top):    [<span class="num">-0.866</span>×3.1, <span class="num">-0.500</span>×3.1, <span class="num">-11.150</span>] = [<span class="num">-2.684, -1.550, -11.150</span>]
+Corner 4 (inner, top):    [<span class="num">-0.866</span>×2.5, <span class="num">-0.500</span>×2.5, <span class="num">-11.150</span>] = [<span class="num">-2.165, -1.250, -11.150</span>]</div>
+
+  <h3>3.2 — The MCP prompt template</h3>
+  <div class="code-block">Cut a bayonet lock channel into [BODY_NAME].
+
+Sketch: Create a profile sketch on a construction plane containing
+the Z axis, facing [ANGLE]°. Draw a rectangle with these exact
+world coordinates:
+  [X1, Y1, Z_BOT]
+  [X2, Y2, Z_BOT]
+  [X2, Y2, Z_TOP]
+  [X1, Y1, Z_TOP]
+
+Revolve cut: Revolve that profile [DEGREES]° around the Z axis.
+Operation = Cut. Target body = [BODY_NAME] only.
+
+Report: Volume of [BODY_NAME] before and after.
+If volume removed = 0, the cut did not intersect — report and stop.</div>
+
+  <div class="box box-red">
+    <strong>0.1cm outer radius buffer is mandatory.</strong> If your profile edges land exactly flush with the body surface, Fusion runs without error but removes zero material. Always overshoot by 0.1cm on surfaces you want to cut through.
+  </div>
+  <div class="box box-accent">
+    <strong>Direction:</strong> Use negative degrees for clockwise sweep when viewed from below. Positive = counter-clockwise. For a bayonet that locks CW from the handle end: use negative degrees.
+  </div>
+</section>
+
+<!-- ══ SECTION 4 ══════════════════════════════════════════════════ -->
+<section id="s4">
+  <div class="section-label">section 4</div>
+  <h2>Entry Slots — Specific Prompt Pattern</h2>
+  <p>Entry slots differ from lock channels in one key way: they cut through the outer wall only, with NO revolve sweep. They are straight extrude cuts open at the bottom rim.</p>
+
+  <div class="box box-accent">
+    Entry slots are <strong>not revolve cuts</strong>. They are straight extrude cuts that open at the ring bottom (Z = -125mm). Inner boundary = ring ID bore (r = 1.905cm). Outer boundary penetrates through ring OD (r = 3.0cm + 0.1cm buffer = 3.1cm).
+  </div>
+
+  <h3>4.1 — Entry slot MCP prompt template</h3>
+  <div class="code-block">Cut an entry slot into REF_BayonetRing_V1 at [ANGLE]°.
+
+This is a straight extrude cut (NOT a revolve). It opens at the ring
+bottom face (Z = -12.500cm) and extends upward to Z = -11.700cm.
+
+Sketch on XY plane at Z = -12.500cm (ring bottom face).
+Draw a rectangle with these 4 corners (all at Z = -12.500cm):
+  [X_INNER_LEFT,  Y_INNER_LEFT,  -12.500]
+  [X_OUTER_LEFT,  Y_OUTER_LEFT,  -12.500]
+  [X_OUTER_RIGHT, Y_OUTER_RIGHT, -12.500]
+  [X_INNER_RIGHT, Y_INNER_RIGHT, -12.500]
+
+Extrude: Cut upward from Z = -12.500cm to Z = -11.700cm (0.800cm depth).
+Operation = Cut. Target body = REF_BayonetRing_V1 only.
+
+Report volume before and after. If removed = 0, stop and report.</div>
+
+  <h3>4.2 — Pre-computed corner coordinates for 90° slot</h3>
+  <p>Slot total width = 12mm (±0.441cm from center angle). Inner r = 1.905cm. Outer r = 3.1cm. Z: -12.500 to -11.700cm.</p>
+  <table class="data-table">
+    <tr><th>Point</th><th>X (cm)</th><th>Y (cm)</th><th>Z (cm)</th></tr>
+    <tr><td>Inner left</td>  <td class="mono">-0.441</td><td class="mono">1.905</td><td class="mono">-12.500 / -11.700</td></tr>
+    <tr><td>Inner right</td> <td class="mono">+0.441</td><td class="mono">1.905</td><td class="mono">-12.500 / -11.700</td></tr>
+    <tr><td>Outer left</td>  <td class="mono">-0.441</td><td class="mono">3.100</td><td class="mono">-12.500 / -11.700</td></tr>
+    <tr><td>Outer right</td> <td class="mono">+0.441</td><td class="mono">3.100</td><td class="mono">-12.500 / -11.700</td></tr>
+  </table>
+  <p class="dim">For 210° and 330°: rotate the ±0.441cm slot vector by the angle, add to radial position. Keep 0.1cm outer buffer. Ask regular Claude chat to compute these — give it the numbers above as the template.</p>
+</section>
+
+<!-- ══ SECTION 5 ══════════════════════════════════════════════════ -->
+<section id="s5">
+  <div class="section-label">section 5</div>
+  <h2>Why Python Scripts Failed</h2>
+
+  <table class="data-table">
+    <tr><th>API Call</th><th>Error</th><th>Why</th></tr>
+    <tr><td class="mono">circularPatternFeatures.add()</td><td class="err">NO_TARGET_BODY</td><td>Multi-body files: pattern loses body reference</td></tr>
+    <tr><td class="mono">revolveInput.participantBodies = [body]</td><td class="warn">Silent — 0 cm³ removed</td><td>Revolve ignores participantBodies silently</td></tr>
+    <tr><td class="mono">constructionPlanes.setByAngle()</td><td class="warn">Geometry at Z=0</td><td>Coordinate mapping is unpredictable</td></tr>
+    <tr><td class="mono">constructionPlanes.setByThreePoints()</td><td class="err">InternalValidationError</td><td>Fusion kernel rejects certain point combos</td></tr>
+    <tr><td class="mono">zConstructionAxis as revolve axis</td><td class="err">ASM_PATH_TANGENT</td><td>Axis lies IN sketch plane = tangent error</td></tr>
+  </table>
+
+  <h3>What Python IS good for</h3>
+  <ul class="checklist">
+    <li><span class="num">→</span><div class="check-text">Diagnostic scripts — read geometry, confirm dimensions, check volumes</div></li>
+    <li><span class="num">→</span><div class="check-text">Simple extrude cuts on a single body (no patterns, no revolves)</div></li>
+    <li><span class="num">→</span><div class="check-text">Volume checks before/after any MCP cut</div></li>
+    <li><span class="num">→</span><div class="check-text">Finding body tokens and face data</div></li>
+  </ul>
+
+  <h3>Pattern that worked in Python</h3>
+  <div class="code-block"><span class="ok">ext_input.participantBodies = [ring_body]</span>  <span class="cm"># works on extrude</span>
+<span class="ok">ext_feats.add(ext_input)</span>                   <span class="cm"># cuts only the ring</span>
+
+<span class="bad"># DO NOT use circularPatternFeatures on multi-body files</span>
+<span class="bad"># DO NOT use participantBodies on revolveFeatures input</span></div>
+</section>
+
+<!-- ══ SECTION 6 ══════════════════════════════════════════════════ -->
+<section id="s6">
+  <div class="section-label">section 6</div>
+  <h2>Diagnostic Workflow — When Cuts Do Nothing</h2>
+  <p>When a cut runs without error but removes zero material, follow in order:</p>
+
+  <ul class="checklist">
+    <li><span class="num">1</span><div class="check-text">Confirm profile position<div class="check-how">Print bounding box of sketch profile. Check Y and Z ranges match body's known extents.</div></div></li>
+    <li><span class="num">2</span><div class="check-text">Check volume before and after<div class="check-how"><code>print(f"Removed: {vol_before - vol_after:.4f} cm³")</code> — if 0.0000 the cut missed entirely</div></div></li>
+    <li><span class="num">3</span><div class="check-text">Remove participantBodies and check which body was cut<div class="check-how">Remove it and re-run. Check all body volumes to see what was actually cut — tells you if geometry is right but targeting is wrong.</div></div></li>
+    <li><span class="num">4</span><div class="check-text">Add buffer to profile edges<div class="check-how">If geometry confirmed correct but still 0 cm³ removed, profile is flush with surface. Add 0.1–0.2cm buffer.</div></div></li>
+    <li><span class="num">5</span><div class="check-text">Switch to MCP prompts<div class="check-how">If Python keeps failing on revolves or construction planes, stop. MCP handles 3D plane creation through Fusion's UI layer which is more robust than the API.</div></div></li>
+  </ul>
+</section>
+
+<!-- ══ SECTION 7 ══════════════════════════════════════════════════ -->
+<section id="s7">
+  <div class="section-label">section 7</div>
+  <h2>Multi-Body File Rules</h2>
+  <div class="box box-red">
+    <strong>Warning:</strong> In a file with multiple bodies, circular patterns and revolves behave differently than in single-body files. These rules are confirmed from real multi-body MCP debug sessions.
+  </div>
+
+  <table class="split-table">
+    <tr><th class="safe-h">✓ Do this</th><th class="unsafe-h">✗ Not this</th></tr>
+    <tr><td class="safe">3 individual extrude cuts in a loop</td><td class="unsafe">circularPatternFeatures on multi-body</td></tr>
+    <tr><td class="safe">3 individual revolve cuts via MCP</td><td class="unsafe">circularPatternFeatures on revolves</td></tr>
+    <tr><td class="safe">participantBodies on extrude inputs</td><td class="unsafe">participantBodies on revolve inputs</td></tr>
+    <tr><td class="safe">Re-fetch body reference after each cut</td><td class="unsafe">Cache body reference across cuts</td></tr>
+    <tr><td class="safe">Name target body explicitly in MCP prompt</td><td class="unsafe">Let Fusion pick which body to cut</td></tr>
+    <tr><td class="safe">Volume check after every single cut</td><td class="unsafe">Batch multiple cuts then check once</td></tr>
+  </table>
+</section>
+
+<!-- ══ SECTION 8 ══════════════════════════════════════════════════ -->
+<section id="s8">
+  <div class="section-label">section 8</div>
+  <h2>Units & Coordinate Reference</h2>
+
+  <table class="data-table">
+    <tr><th>Context</th><th>Unit</th><th>Example</th></tr>
+    <tr><td>Fusion Python API</td><td class="warn">Centimeters</td><td class="mono">30mm = 3.0 in API</td></tr>
+    <tr><td>MCP prompts</td><td class="warn">Centimeters</td><td class="mono">Z = -11.7 means -117mm</td></tr>
+    <tr><td>Spec / real world</td><td>Millimeters</td><td class="mono">OD = 60mm</td></tr>
+    <tr><td>Angles</td><td>Degrees</td><td class="mono">-60 = CW from below</td></tr>
+    <tr><td>Positive Z direction</td><td>Up (away from handle)</td><td class="mono">Ring top = -99mm = -9.9cm</td></tr>
+    <tr><td>Negative Z direction</td><td>Down (handle end)</td><td class="mono">Ring bottom = -125mm = -12.5cm</td></tr>
+  </table>
+</section>
+
+<!-- ══ SECTION 9 ══════════════════════════════════════════════════ -->
+<section id="s9">
+  <div class="section-label">section 9</div>
+  <h2>Confirmed Ring Dimensions <span class="dim-tag">v1 extended</span></h2>
+  <div class="box box-accent">
+    Tube was intentionally extended from -99mm to -125mm for screw clearance. Ring OD was changed from spec's provisional 54mm to 60mm. All values below reflect the actual built model.
+  </div>
+
+  <table class="data-table">
+    <tr><th>Feature</th><th>mm</th><th>cm (API)</th></tr>
+    <tr><td>Ring OD radius</td>              <td class="mono">30.0mm</td>  <td class="mono">3.0000</td></tr>
+    <tr><td>Ring ID radius (bore)</td>       <td class="mono">19.05mm</td> <td class="mono">1.9050</td></tr>
+    <tr><td>Ring top Z</td>                  <td class="mono">-99.0mm</td> <td class="mono">-9.900</td></tr>
+    <tr><td>Ring bottom Z</td>               <td class="mono">-125.0mm</td><td class="mono">-12.500</td></tr>
+    <tr><td>Entry slot Z range</td>          <td class="mono">-125 → -117mm</td><td class="mono">-12.500 → -11.700</td></tr>
+    <tr><td>Entry slot height</td>           <td class="mono">8.0mm</td>   <td class="mono">0.800</td></tr>
+    <tr><td>Entry slot width</td>            <td class="mono">12.0mm (±6mm from center)</td><td class="mono">0.600 each side</td></tr>
+    <tr><td>Lock channel Z range</td>        <td class="mono">-117 → -111.5mm</td><td class="mono">-11.700 → -11.150</td></tr>
+    <tr><td>Lock channel axial height</td>   <td class="mono">5.5mm</td>   <td class="mono">0.550</td></tr>
+    <tr><td>Lock channel radial depth</td>   <td class="mono">5.0mm from OD</td><td class="mono">r: 2.5 → 3.1 (w/ buffer)</td></tr>
+    <tr><td>Lock channel sweep</td>          <td class="mono">60° per channel</td><td class="mono">Negative = CW from below</td></tr>
+    <tr><td>Channel positions</td>           <td class="mono">90°, 210°, 330°</td><td class="mono">120° apart</td></tr>
+    <tr><td>Entry slot positions</td>        <td class="mono">90°, 210°, 330°</td><td class="mono">Aligned with channels</td></tr>
+  </table>
+</section>
+
+<!-- ══ SECTION 10 ══════════════════════════════════════════════════ -->
+<section id="s10">
+  <div class="section-label">section 10</div>
+  <h2>Angle → World Coordinates</h2>
+  <p>Pre-computed for all 3 angles. Inner r = 2.5cm, Outer r = 3.1cm (with buffer).</p>
+
+  <table class="data-table">
+    <tr><th>Angle</th><th>cos(a)</th><th>sin(a)</th><th>X at r=2.5</th><th>X at r=3.1</th><th>Y at r=2.5 / r=3.1</th></tr>
+    <tr>
+      <td class="mono ok">90°</td>
+      <td class="mono">0.000</td><td class="mono">1.000</td>
+      <td class="mono">0.000</td><td class="mono">0.000</td>
+      <td class="mono">2.500 / 3.100</td>
+    </tr>
+    <tr>
+      <td class="mono ok">210°</td>
+      <td class="mono">-0.866</td><td class="mono">-0.500</td>
+      <td class="mono">-2.165</td><td class="mono">-2.684</td>
+      <td class="mono">-1.250 / -1.550</td>
+    </tr>
+    <tr>
+      <td class="mono ok">330°</td>
+      <td class="mono">0.866</td><td class="mono">-0.500</td>
+      <td class="mono">2.165</td><td class="mono">2.684</td>
+      <td class="mono">-1.250 / -1.550</td>
+    </tr>
+  </table>
+
+  <div class="box box-green">
+    <strong>Why 90° works best first:</strong> The 90° channel uses the YZ plane directly (X=0 for all points). YZ is a built-in plane with no creation ambiguity. Always test new cut patterns at 90° before doing 210° and 330°.
+  </div>
+</section>
+
+<!-- ══ SECTION 11 ══════════════════════════════════════════════════ -->
+<section id="s11">
+  <div class="section-label">section 11</div>
+  <h2>Bayonet Ring Build State</h2>
+
+  <table class="data-table state-table">
+    <tr><th>Feature</th><th>Status</th><th>Volume check</th><th>Notes</th></tr>
+    <tr><td>Lock channel @ 90°</td>  <td class="state-done">✓ DONE</td><td class="ok">confirmed</td><td class="dim">Revolve -60° CW</td></tr>
+    <tr><td>Lock channel @ 210°</td> <td class="state-done">✓ DONE</td><td class="ok">confirmed</td><td class="dim">Revolve -60° CW</td></tr>
+    <tr><td>Lock channel @ 330°</td> <td class="state-done">✓ DONE</td><td class="ok">confirmed</td><td class="dim">Revolve -60° CW</td></tr>
+    <tr><td>Entry slot @ 90°</td>    <td class="state-todo">TODO</td><td class="dim">—</td><td class="dim">Extrude cut, not revolve</td></tr>
+    <tr><td>Entry slot @ 210°</td>   <td class="state-todo">TODO</td><td class="dim">—</td><td class="dim">Extrude cut, not revolve</td></tr>
+    <tr><td>Entry slot @ 330°</td>   <td class="state-todo">TODO</td><td class="dim">—</td><td class="dim">Extrude cut, not revolve</td></tr>
+    <tr><td>Handle prong geometry</td><td class="state-todo">TODO</td><td class="dim">—</td><td class="dim">Derived from channel dims</td></tr>
+  </table>
+</section>
+
+<!-- ══ SECTION 12 ══════════════════════════════════════════════════ -->
+<section id="s12">
+  <div class="section-label">section 12</div>
+  <h2>Lessons Learned & AI Failure Modes</h2>
+
+  <h3>MCP vs Python — when to use which</h3>
+  <table class="split-table">
+    <tr><th class="safe-h">Use MCP prompts for</th><th class="unsafe-h">Use Python scripts for</th></tr>
+    <tr><td class="safe">Revolve cuts</td><td class="unsafe">Reading geometry / diagnostics</td></tr>
+    <tr><td class="safe">Construction plane creation</td><td class="unsafe">Simple extrude cuts (single direction)</td></tr>
+    <tr><td class="safe">Complex multi-body targeting</td><td class="unsafe">Volume checks before/after</td></tr>
+    <tr><td class="safe">Any cut that kept failing in Python</td><td class="unsafe">Finding body tokens and face data</td></tr>
+    <tr><td class="safe">Entry slot extrude cuts</td><td class="unsafe">Bulk ops on confirmed geometry</td></tr>
+  </table>
+
+  <h3>Debugging sequence</h3>
+  <ul class="checklist">
+    <li><span class="num">1</span><div class="check-text">Confirm body exists with correct volume/Z range</div></li>
+    <li><span class="num">2</span><div class="check-text">Confirm profile coordinates are in the right place (print bounding box)</div></li>
+    <li><span class="num">3</span><div class="check-text">Test one cut with no participantBodies — see which body it hits</div></li>
+    <li><span class="num">4</span><div class="check-text">If geometry correct but 0 cm³ removed — add buffer to profile edges</div></li>
+    <li><span class="num">5</span><div class="check-text">If Python keeps failing on planes/revolves — switch to MCP</div></li>
+  </ul>
+
+  <h3>Profile token rules</h3>
+  <ul class="checklist">
+    <li><span class="num">→</span><div class="check-text">Profile tokens are invalidated after ANY sketch operation — re-query before every extrude</div></li>
+    <li><span class="num">→</span><div class="check-text">Face query API returns faces from ALL bodies — filter by face area to avoid cross-body contamination</div></li>
+    <li><span class="num">→</span><div class="check-text">Body renaming does not work via MCP — use Fusion browser right-click → rename manually</div></li>
+    <li><span class="num">→</span><div class="check-text">Construction planes must be offset from TOP face using negative values to reach interior Z</div></li>
+    <li><span class="num">→</span><div class="check-text">Only Z-direction extrudes cut reliably — X-direction extrudes from YZ-plane return "No target body"</div></li>
+  </ul>
+</section>
+
+<footer>
+  <span>Fusion 360 MCP Bot · Troubleshooting Artifact · v2</span>
+  <span><a href="https://github.com/teddyski/fusion-mcp-troubleshooting" class="gh-link" target="_blank" rel="noopener">github.com/teddyski/fusion-mcp-troubleshooting</a></span>
+</footer>
+
+</div>
+
+<script>
+function copyFirewall(btn) {
+  const lines = [
+    "RADIAL MATH FIREWALL — READ BEFORE ANYTHING ELSE",
+    "",
+    "If any step in this task requires deriving, computing, or inferring:",
+    '  - A radius value from a description (e.g. "outer wall", "flush with surface")',
+    "  - An X/Y coordinate from an angle and radius",
+    "  - A profile position relative to a curved surface",
+    "  - Any trig (sin, cos, tan) to place geometry",
+    "",
+    "STOP. Do not attempt to derive it. Instead:",
+    "",
+    '  Option A — Ask: "I need the pre-computed XY corners for this cut.',
+    '              Can you calculate them and give me raw numbers?"',
+    "",
+    '  Option B — Say: "I need a Python measurement to confirm [specific value]',
+    '              before I can place this profile."',
+    "",
+    "Never guess a radius. Never infer 'inner boundary' or 'outer boundary' from",
+    "a description. If both radii are not given as explicit numbers: stop and ask."
+  ].join("\n");
+  navigator.clipboard.writeText(lines).then(() => {
+    btn.textContent = "Copied!";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "Copy block"; btn.classList.remove("copied"); }, 2000);
+  });
+}
+
+function copyExample(btn) {
+  const text = document.getElementById("example-text").textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = "Copied!";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 2000);
+  });
+}
+</script>
+</body>
+</html>
